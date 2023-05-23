@@ -28,7 +28,7 @@
         #popup {
             width: 100%;
             height: 100%;
-            display: none; /* Initially hidden */
+            display: flex;
             justify-content: center;
             align-items: center;
             background-color: rgba(0, 0, 0, 0.8);
@@ -56,15 +56,13 @@
 
     <script>
         // Check if snake.htmulatorcart file exists
-        function checkFileExists(url, callback) {
-            var xhr = new XMLHttpRequest();
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    callback(xhr.status === 200);
-                }
-            };
-            xhr.open('HEAD', url, true);
-            xhr.send();
+        async function checkFileExists() {
+            try {
+                const response = await fetch('./snake.htmulatorcart');
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
         }
 
         // Game settings
@@ -220,8 +218,7 @@
         }
 
         // Initialize game
-        var fileUrl = 'snake.htmulatorcart';
-        checkFileExists(fileUrl, function(fileExists) {
+        checkFileExists().then(function(fileExists) {
             if (fileExists) {
                 initializeGameBoard();
                 generateFood();
@@ -234,15 +231,13 @@
 
         // Handle window resize
         window.addEventListener('resize', function() {
-            checkFileExists(fileUrl, function(fileExists) {
+            checkFileExists().then(function(fileExists) {
                 if (fileExists) {
                     hidePopup();
                     initializeGameBoard();
                     generateFood();
                     clearInterval(gameInterval);
                     gameInterval = setInterval(updateGame, 200);
-                } else {
-                    showPopup();
                 }
             });
         });
