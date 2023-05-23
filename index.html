@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SNAKE - HTMuLator</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #game-board {
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            position: relative;
+            overflow: hidden;
+        }
+        .pixel {
+            width: 1px;
+            height: 1px;
+            background-color: #0f0;
+            position: absolute;
+        }
+        .corrupted {
+            background-color: #f00;
+        }
+        #popup {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+        }
+        .popup-content {
+            background-color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-board"></div>
+    <div id="popup">
+        <div class="popup-content">
+            <h2>A fatal error occurred.</h2>
+            <p>File 'snake.htmulatorcart' cannot be found. Make sure it is in the same directory as HTMuLator and try again.</p>
+        </div>
+    </div>
+
+    <script>
+        // Check if snake.htmulatorcart file exists
+        var fileExists = true; // Change this value if the file doesn't exist
+
+        // Game settings
+        var gridSize;
+        var pixelSize;
+        var snake;
+        var direction;
+        var food;
+        var gameBoard;
+        var gameInterval;
+
+        // Initialize game board
+        function initializeGameBoard() {
+            var windowWidth = window.innerWidth;
+            var windowHeight = window.innerHeight;
+            gridSize = Math.floor(windowWidth / 1.5);
+            pixelSize = Math.max(Math.floor(windowWidth / gridSize), 1);
+            snake = [{ x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) }];
+            direction = 'right';
+            food = { x: Math.floor(Math.random() * gridSize), y: Math.floor(Math.random() * gridSize) };
+            gameBoard = document.getElementById('game-board');
+            gameBoard.style.width = gridSize * pixelSize + 'px';
+            gameBoard.style.height = gridSize * pixelSize + 'px';
+        }
+
+        // Update game board
+        function updateGameBoard() {
+            var pixels = document.getElementsByClassName('pixel');
+            for (var i = 0; i < pixels.length; i++) {
+                var pixel = pixels[i];
+                pixel.className = 'pixel';
+                if (Math.random() < 0.01) {
+                    pixel.classList.add('corrupted');
+                }
+            }
+        }
+
+        // Draw snake
+        function drawSnake() {
+            for (var i = 0; i < snake.length; i++) {
+                var segment = snake[i];
+                var snakePixel = document.getElementsByClassName('pixel')[(segment.y * gridSize) + segment.x];
+                snakePixel.classList.add('snake');
+            }
+        }
+
+        // Draw food
+        function drawFood() {
+            var foodPixel = document.getElementsByClassName('pixel')[(food.y * gridSize) + food.x];
+            foodPixel.classList.add('food');
+        }
+
+        // Clear game board
+        function clearGameBoard() {
+            var pixels = document.getElementsByClassName('pixel');
+            for (var i = 0; i < pixels.length; i++) {
+                var pixel = pixels[i];
+                pixel.className = 'pixel';
+            }
+        }
+
+        // Update snake direction
+        function updateDirection(event) {
+            var key = event.keyCode;
+            if (key === 37 && direction !== 'right') {
+                direction = 'left';
+            } else if (key === 38 && direction !== 'down') {
+                direction = 'up';
+            } else if (key === 39 && direction !== 'left') {
+                direction = 'right';
+            } else if (key === 40 && direction !== 'up') {
+                direction = 'down';
+            }
+        }
+
+        // Update game state
+        function updateGame() {
+            clearGameBoard();
+            updateGameBoard();
+            drawSnake();
+            drawFood();
+            moveSnake();
+            checkCollision();
+        }
+
+        // Move the snake
+        function moveSnake() {
+            var head = Object.assign({}, snake[0]);
+            switch (direction) {
+                case 'up':
+                    head.y--;
+                    break;
+                case 'down':
+                    head.y++;
+                    break;
+                case 'left':
+                    head.x--;
+                    break;
+                case 'right':
+                    head.x++;
+                    break;
+            }
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                generateFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        // Generate new food
+        function generateFood() {
+            food = {
+                x: Math.floor(Math.random() * gridSize),
+                y: Math.floor(Math.random() * gridSize)
+            };
+        }
+
+        // Check for collision
+        function checkCollision() {
+            var head = snake[0];
+            if (
+                head.x < 0 || head.x >= gridSize ||
+                head.y < 0 || head.y >= gridSize ||
+                isSnakeCollision()
+            ) {
+                clearInterval(gameInterval);
+                showPopup();
+            }
+        }
+
+        // Check for snake collision
+        function isSnakeCollision() {
+            var head = snake[0];
+            for (var i = 1; i < snake.length; i++) {
+                if (snake[i].x === head.x && snake[i].y === head.y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Show popup
+        function showPopup() {
+            var popup = document.getElementById('popup');
+            popup.style.display = 'flex';
+        }
+
+        // Hide popup
+        function hidePopup() {
+            var popup = document.getElementById('popup');
+            popup.style.display = 'none';
+        }
+
+        // Initialize game
+        if (fileExists) {
+            initializeGameBoard();
+            generateFood();
+            var gameInterval = setInterval(updateGame, 200);
+            document.addEventListener('keydown', updateDirection);
+        } else {
+            showPopup();
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (!fileExists) {
+                hidePopup();
+                initializeGameBoard();
+                generateFood();
+                clearInterval(gameInterval);
+                gameInterval = setInterval(updateGame, 200);
+            }
+        });
+    </script>
+</body>
+</html>
